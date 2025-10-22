@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   Dialog,
   DialogContent,
@@ -28,6 +29,8 @@ export default function TransactionsPage() {
     type: "expense",
     account: "main",
     date: new Date().toISOString().split("T")[0],
+    isInstallment: false,
+    installments: 1,
   })
 
   const categories = Array.from(new Set(demoTransactions.map((t) => t.category)))
@@ -56,7 +59,25 @@ export default function TransactionsPage() {
   }
 
   const handleCreateTransaction = () => {
-    console.log("Creating transaction:", newTransaction)
+    if (newTransaction.isInstallment && newTransaction.installments > 1) {
+      const installmentAmount = Number.parseFloat(newTransaction.amount) / newTransaction.installments
+      const baseDate = new Date(newTransaction.date)
+
+      for (let i = 0; i < newTransaction.installments; i++) {
+        const installmentDate = new Date(baseDate)
+        installmentDate.setMonth(installmentDate.getMonth() + i)
+
+        console.log(`Creating installment ${i + 1}/${newTransaction.installments}:`, {
+          ...newTransaction,
+          amount: installmentAmount.toFixed(2),
+          description: `${newTransaction.description} (${i + 1}/${newTransaction.installments})`,
+          date: installmentDate.toISOString().split("T")[0],
+        })
+      }
+    } else {
+      console.log("Creating transaction:", newTransaction)
+    }
+
     setIsDialogOpen(false)
     setNewTransaction({
       description: "",
@@ -65,6 +86,8 @@ export default function TransactionsPage() {
       type: "expense",
       account: "main",
       date: new Date().toISOString().split("T")[0],
+      isInstallment: false,
+      installments: 1,
     })
   }
 
@@ -190,6 +213,42 @@ export default function TransactionsPage() {
                       />
                     </div>
                   </div>
+
+                  <div className="flex items-center space-x-2 pt-2 border-t border-border">
+                    <Checkbox
+                      id="installment"
+                      checked={newTransaction.isInstallment}
+                      onCheckedChange={(checked) =>
+                        setNewTransaction({ ...newTransaction, isInstallment: checked as boolean })
+                      }
+                    />
+                    <Label htmlFor="installment" className="text-sm font-normal cursor-pointer">
+                      Installment purchase (parcelado)
+                    </Label>
+                  </div>
+
+                  {newTransaction.isInstallment && (
+                    <div className="grid gap-2">
+                      <Label htmlFor="installments">Number of Installments</Label>
+                      <Input
+                        id="installments"
+                        type="number"
+                        min="2"
+                        max="48"
+                        placeholder="2"
+                        value={newTransaction.installments}
+                        onChange={(e) =>
+                          setNewTransaction({ ...newTransaction, installments: Number.parseInt(e.target.value) || 1 })
+                        }
+                      />
+                      {newTransaction.amount && newTransaction.installments > 1 && (
+                        <p className="text-sm text-muted-foreground">
+                          {newTransaction.installments}x of $
+                          {(Number.parseFloat(newTransaction.amount) / newTransaction.installments).toFixed(2)}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex justify-end gap-3">
@@ -203,7 +262,6 @@ export default function TransactionsPage() {
           </div>
         </div>
 
-        {/* Filters */}
         <Card className="border-border/50 shadow-lg mb-6">
           <CardHeader>
             <CardTitle className="text-lg">Filters</CardTitle>
@@ -268,7 +326,6 @@ export default function TransactionsPage() {
           </CardContent>
         </Card>
 
-        {/* Transactions Table */}
         <Card className="border-border/50 shadow-lg">
           <CardHeader>
             <CardTitle className="text-lg">All Transactions ({filteredTransactions.length})</CardTitle>

@@ -8,6 +8,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Checkbox } from "@/components/ui/checkbox"
 import {
   demoTransactions,
   demoGoals,
@@ -40,6 +41,8 @@ export default function DashboardPage() {
     category: "",
     account: "",
     date: new Date().toISOString().split("T")[0],
+    isInstallment: false,
+    installments: 1,
   })
 
   const stats = calculateMonthlyStats(demoTransactions)
@@ -48,7 +51,25 @@ export default function DashboardPage() {
   const goalProgress = (demoGoals[0].current / demoGoals[0].target) * 100
 
   const handleCreateTransaction = () => {
-    console.log("Creating transaction:", newTransaction)
+    if (newTransaction.isInstallment && newTransaction.installments > 1) {
+      const installmentAmount = Number.parseFloat(newTransaction.amount) / newTransaction.installments
+      const baseDate = new Date(newTransaction.date)
+
+      for (let i = 0; i < newTransaction.installments; i++) {
+        const installmentDate = new Date(baseDate)
+        installmentDate.setMonth(installmentDate.getMonth() + i)
+
+        console.log(`Creating installment ${i + 1}/${newTransaction.installments}:`, {
+          ...newTransaction,
+          amount: installmentAmount.toFixed(2),
+          description: `${newTransaction.description} (${i + 1}/${newTransaction.installments})`,
+          date: installmentDate.toISOString().split("T")[0],
+        })
+      }
+    } else {
+      console.log("Creating transaction:", newTransaction)
+    }
+
     setIsTransactionOpen(false)
     setNewTransaction({
       description: "",
@@ -57,6 +78,8 @@ export default function DashboardPage() {
       category: "",
       account: "",
       date: new Date().toISOString().split("T")[0],
+      isInstallment: false,
+      installments: 1,
     })
   }
 
@@ -120,7 +143,7 @@ export default function DashboardPage() {
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth={2}
-                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                  d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138z"
                 />
               </svg>
             }
@@ -146,7 +169,11 @@ export default function DashboardPage() {
                     outerRadius={100}
                     fill="#8884d8"
                     dataKey="value"
-                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    label={(data: any) => {
+                      const name = data.name as string
+                      const percent = data.percent as number
+                      return `${name} ${(percent * 100).toFixed(0)}%`
+                    }}
                   >
                     {categoryData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
@@ -333,6 +360,42 @@ export default function DashboardPage() {
                   onChange={(e) => setNewTransaction({ ...newTransaction, date: e.target.value })}
                 />
               </div>
+
+              <div className="flex items-center space-x-2 pt-2 border-t border-border">
+                <Checkbox
+                  id="installment"
+                  checked={newTransaction.isInstallment}
+                  onCheckedChange={(checked) =>
+                    setNewTransaction({ ...newTransaction, isInstallment: checked as boolean })
+                  }
+                />
+                <Label htmlFor="installment" className="text-sm font-normal cursor-pointer">
+                  Installment purchase (parcelado)
+                </Label>
+              </div>
+
+              {newTransaction.isInstallment && (
+                <div className="grid gap-2">
+                  <Label htmlFor="installments">Number of Installments</Label>
+                  <Input
+                    id="installments"
+                    type="number"
+                    min="2"
+                    max="48"
+                    placeholder="2"
+                    value={newTransaction.installments}
+                    onChange={(e) =>
+                      setNewTransaction({ ...newTransaction, installments: Number.parseInt(e.target.value) || 1 })
+                    }
+                  />
+                  {newTransaction.amount && newTransaction.installments > 1 && (
+                    <p className="text-sm text-muted-foreground">
+                      {newTransaction.installments}x of $
+                      {(Number.parseFloat(newTransaction.amount) / newTransaction.installments).toFixed(2)}
+                    </p>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="flex gap-3 justify-end">

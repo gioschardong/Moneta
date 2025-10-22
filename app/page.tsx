@@ -9,16 +9,39 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
 
+async function loginApi(email: string, password: string) {
+  const response = await fetch("http://localhost:5075/api/auth/login", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ email, password }),
+  })
+
+  if (!response.ok) {
+    throw new Error("Login failed")
+  }
+
+  const data = await response.json()
+  return data.token
+}
+
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const router = useRouter()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // Demo mode - just navigate to dashboard
-    router.push("/dashboard")
+    try {
+      const token = await loginApi(email, password)
+      localStorage.setItem("token", token)
+      router.push("/dashboard")
+    } catch (error) {
+      // You can handle login errors here, e.g. show a message
+      console.error(error)
+    }
   }
 
   return (
