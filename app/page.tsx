@@ -8,41 +8,74 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent } from "@/components/ui/card"
 import { useRouter } from "next/navigation"
+import { Alert, AlertDescription } from "@/components/ui/alert"
+import { login as loginApi, register } from "../services/api";
 
-async function loginApi(email: string, password: string) {
-  const response = await fetch("http://localhost:5075/api/auth/login", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({ email, password }),
-  })
+// async function loginApi(email: string, password: string) {
+//   const response = await fetch("http://localhost:5075/api/auth/login", {
+//     method: "POST",
+//     headers: {
+//       "Content-Type": "application/json",
+//     },
+//     body: JSON.stringify({ email, password }),
+//   })
 
-  if (!response.ok) {
-    throw new Error("Login failed")
-  }
+//   if (!response.ok) {
+//     throw new Error("Login failed")
+//   }
 
-  const data = await response.json()
-  return data.token
-}
+//   const data = await response.json()
+//   return data.token
+// }
 
 export default function LoginPage() {
   const [isLogin, setIsLogin] = useState(true)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [name, setName] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [error, setError] = useState("")
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    try {
-      const token = await loginApi(email, password)
-      localStorage.setItem("token", token)
-      router.push("/dashboard")
-    } catch (error) {
-      // You can handle login errors here, e.g. show a message
-      console.error(error)
+    e.preventDefault();
+    setError("");
+
+    if (!isLogin) {
+      if (password !== confirmPassword) {
+        setError("Passwords do not match");
+        return;
+      }
+      if (name.trim().length < 2) {
+        setError("Please enter a valid name");
+        return;
+      }
+
+      try {
+        // 1️⃣ Registrar usuário
+        await register(email, password, name);
+
+        // 2️⃣ Logar automaticamente após registro
+        const token = await loginApi(email, password);
+        localStorage.setItem("token", token);
+        router.push("/dashboard");
+      } catch (error) {
+        console.error("Registration error:", error);
+        setError(error instanceof Error ? error.message : "Registration failed");
+      }
+      return;
     }
-  }
+
+    // Login
+    try {
+      const token = await loginApi(email, password);
+      localStorage.setItem("token", token);
+      router.push("/dashboard");
+    } catch (error) {
+      console.error("Login error:", error);
+      setError("Invalid email or password. Please try again.");
+    }
+  };
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary/20 via-background to-secondary/20 p-4">
@@ -70,7 +103,28 @@ export default function LoginPage() {
             <p className="text-muted-foreground text-center mt-2">{isLogin ? "Welcome back" : "Create your account"}</p>
           </div>
 
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="John Doe"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  className="h-12"
+                />
+              </div>
+            )}
+
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -83,6 +137,21 @@ export default function LoginPage() {
                 className="h-12"
               />
             </div>
+
+            {!isLogin && (
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  className="h-12"
+                />
+              </div>
+            )}
 
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -104,7 +173,10 @@ export default function LoginPage() {
 
           <div className="mt-6 text-center">
             <button
-              onClick={() => setIsLogin(!isLogin)}
+              onClick={() => {
+                setIsLogin(!isLogin)
+                setError("")
+              }}
               className="text-sm text-muted-foreground hover:text-primary transition-colors"
             >
               {isLogin ? "Don't have an account? " : "Already have an account? "}

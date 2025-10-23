@@ -1,6 +1,6 @@
 "use client"
 import Link from "next/link"
-import { usePathname } from 'next/navigation'
+import { usePathname } from "next/navigation"
 import { Avatar, AvatarFallback } from "@/components/ui/avatar"
 import { Button } from "@/components/ui/button"
 import { cn } from "@/lib/utils"
@@ -33,7 +33,7 @@ export function DashboardHeader() {
                 />
               </svg>
             </div>
-            <span className="font-bold text-xl hidden sm:inline-block">Moneta</span>
+            <span className="font-bold text-xl hidden sm:inline-block">FinanceFlow</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">
@@ -85,9 +85,11 @@ export function DashboardHeader() {
             </SheetContent>
           </Sheet>
 
-          <Avatar className="h-10 w-10 border-2 border-primary/20">
-            <AvatarFallback className="bg-primary text-primary-foreground font-semibold">JD</AvatarFallback>
-          </Avatar>
+          <Link href="/profile">
+            <Avatar className="h-10 w-10 border-2 border-primary/20 cursor-pointer hover:border-primary/40 transition-colors">
+              <AvatarFallback className="bg-primary text-primary-foreground font-semibold">JD</AvatarFallback>
+            </Avatar>
+          </Link>
         </div>
       </div>
     </header>

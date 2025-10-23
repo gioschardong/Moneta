@@ -54,3 +54,21 @@ export async function getGoals() {
 
   return res.json();
 }
+
+export async function register(email: string, password: string, fullName: string) {
+  const res = await fetch("http://localhost:5075/api/auth/register", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email, password, fullName }),
+  });
+
+  if (!res.ok) {
+    const error = await res.text();
+    throw new Error(`Registration failed: ${error}`);
+  }
+
+  const data = await res.json();
+  
+  // Retorna os dados do usuário criado (não retorna token)
+  return data;
+}
