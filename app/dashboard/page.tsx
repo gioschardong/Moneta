@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { StatCard } from "@/components/stat-card"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { getCategoryNames } from "@/lib/categories"
 import {
   demoTransactions,
   demoGoals,
@@ -34,6 +35,7 @@ const COLORS = ["#6C63FF", "#00E676", "#4FC3F7", "#FFD54F", "#FF6B6B"]
 
 export default function DashboardPage() {
   const [isTransactionOpen, setIsTransactionOpen] = useState(false)
+  const [categories, setCategories] = useState<string[]>([])
   const [newTransaction, setNewTransaction] = useState({
     description: "",
     amount: "",
@@ -44,6 +46,10 @@ export default function DashboardPage() {
     isInstallment: false,
     installments: 1,
   })
+
+  useEffect(() => {
+    setCategories(getCategoryNames())
+  }, [])
 
   const stats = calculateMonthlyStats(demoTransactions)
   const categoryData = getCategoryDistribution(demoTransactions)
@@ -323,13 +329,11 @@ export default function DashboardPage() {
                     <SelectValue placeholder="Select category" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="Food">Food</SelectItem>
-                    <SelectItem value="Transport">Transport</SelectItem>
-                    <SelectItem value="Entertainment">Entertainment</SelectItem>
-                    <SelectItem value="Shopping">Shopping</SelectItem>
-                    <SelectItem value="Bills">Bills</SelectItem>
-                    <SelectItem value="Salary">Salary</SelectItem>
-                    <SelectItem value="Other">Other</SelectItem>
+                    {categories.map((category) => (
+                      <SelectItem key={category} value={category}>
+                        {category}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>

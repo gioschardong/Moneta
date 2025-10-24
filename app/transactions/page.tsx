@@ -1,5 +1,5 @@
 "use client"
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { DashboardHeader } from "@/components/dashboard-header"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -7,6 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
+import { createTransaction } from "@/services/api"
+
 import {
   Dialog,
   DialogContent,
@@ -15,30 +17,96 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog"
-import { demoTransactions } from "@/lib/demo-data"
+
+import { getCategoryNames } from "@/lib/categories"
 
 export default function TransactionsPage() {
+  const [transactions, setTransactions] = useState<any[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [newTransaction, setNewTransaction] = useState({
-    description: "",
-    amount: "",
-    category: "",
-    type: "expense",
-    account: "main",
-    date: new Date().toISOString().split("T")[0],
-    isInstallment: false,
-    installments: 1,
-  })
+  const [categories, setCategories] = useState<string[]>([])
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  type TransactionType = "Income" | "Expense";
+  const [newTransaction, setNewTransaction] = useState<{
+  description: string;
+  amount: string;
+  category: string;
+  type: TransactionType;
+  account: string;
+  date: string;
+  isInstallment: boolean;
+  installments: number;
+}>({
+  description: "",
+  amount: "",
+  category: "",
+  type: "Expense", // valor inicial compatível
+  account: "main",
+  date: new Date().toISOString().split("T")[0],
+  isInstallment: false,
+  installments: 1,
+});
 
-  const categories = Array.from(new Set(demoTransactions.map((t) => t.category)))
+  async function fetchTransactions() {
+    setLoading(true)
+    setError(null)
 
-  const filteredTransactions = demoTransactions.filter((transaction) => {
+    const token = localStorage.getItem("moneta_token")
+    if (!token) {
+      setError("Usuário não autenticado")
+      setLoading(false)
+      console.error("Usuário não autenticado")
+      return
+    }
+
+    // Certifique-se de não adicionar "Bearer" duas vezes
+    const authHeader = `Bearer ${token.replace(/^Bearer\s+/i, "")}`
+    console.log("Authorization header enviado:", authHeader)
+
+    try {
+      const response = await fetch("http://localhost:5075/api/Transactions", {
+        headers: {
+          Authorization: authHeader,
+          "Content-Type": "application/json"
+        },
+      })
+
+      console.log("Status da resposta:", response.status)
+      console.log("StatusText:", response.statusText)
+
+      if (!response.ok) {
+        const text = await response.text()
+        console.error("Corpo da resposta:", text)
+        throw new Error(`Erro ao buscar transações: ${response.status} ${response.statusText}`)
+      }
+
+      const data = await response.json()
+      console.log("Transações recebidas:", data)
+      setTransactions(data)
+    } catch (error) {
+      setError("Erro ao carregar transações")
+      console.error("Erro ao carregar transações:", error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchTransactions()
+    // eslint-disable-next-line
+  }, [])
+
+  useEffect(() => {
+    setCategories(getCategoryNames())
+  }, [])
+
+  const filteredTransactions = transactions.filter((transaction) => {
     const matchesSearch =
-      transaction.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.category.toLowerCase().includes(searchTerm.toLowerCase())
+      transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      transaction.category?.toLowerCase().includes(searchTerm.toLowerCase())
     const matchesCategory = categoryFilter === "all" || transaction.category === categoryFilter
     const matchesType = typeFilter === "all" || transaction.type === typeFilter
 
@@ -48,7 +116,6 @@ export default function TransactionsPage() {
   const handleExportCSV = () => {
     const headers = ["Date", "Category", "Description", "Amount", "Type", "Account"]
     const csvData = filteredTransactions.map((t) => [t.date, t.category, t.description, t.amount, t.type, t.account])
-
     const csv = [headers, ...csvData].map((row) => row.join(",")).join("\n")
     const blob = new Blob([csv], { type: "text/csv" })
     const url = window.URL.createObjectURL(blob)
@@ -58,44 +125,41 @@ export default function TransactionsPage() {
     a.click()
   }
 
-  const handleCreateTransaction = () => {
-    if (newTransaction.isInstallment && newTransaction.installments > 1) {
-      const installmentAmount = Number.parseFloat(newTransaction.amount) / newTransaction.installments
-      const baseDate = new Date(newTransaction.date)
+  const handleCreateTransaction = async () => {
+    try {
+        const payload = {
+        description: newTransaction.description,
+        amount: Number.parseFloat(newTransaction.amount),
+        date: newTransaction.date,
+        type: newTransaction.type, // ✅ tipo seguro
+        categoryId: null,
+        };
+      console.log("Enviando nova transação:", payload);
+      await createTransaction(payload);
 
-      for (let i = 0; i < newTransaction.installments; i++) {
-        const installmentDate = new Date(baseDate)
-        installmentDate.setMonth(installmentDate.getMonth() + i)
-
-        console.log(`Creating installment ${i + 1}/${newTransaction.installments}:`, {
-          ...newTransaction,
-          amount: installmentAmount.toFixed(2),
-          description: `${newTransaction.description} (${i + 1}/${newTransaction.installments})`,
-          date: installmentDate.toISOString().split("T")[0],
-        })
-      }
-    } else {
-      console.log("Creating transaction:", newTransaction)
+      await fetchTransactions(); // recarrega lista
+      setIsDialogOpen(false);
+      setNewTransaction({
+        description: "",
+        amount: "",
+        category: "",
+        type: "Expense",
+        account: "main",
+        date: new Date().toISOString().split("T")[0],
+        isInstallment: false,
+        installments: 1,
+      });
+    } catch (error) {
+      console.error("Erro ao criar transação:", error);
+      alert("Falha ao criar transação. Verifique o console.");
     }
-
-    setIsDialogOpen(false)
-    setNewTransaction({
-      description: "",
-      amount: "",
-      category: "",
-      type: "expense",
-      account: "main",
-      date: new Date().toISOString().split("T")[0],
-      isInstallment: false,
-      installments: 1,
-    })
-  }
+  };
 
   return (
     <div className="min-h-screen bg-background">
       <DashboardHeader />
 
-      <main className="container mx-auto px-4 py-8">
+      <main className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
             <h1 className="text-3xl font-bold text-balance">Transactions</h1>
@@ -154,14 +218,16 @@ export default function TransactionsPage() {
                       <Label htmlFor="type">Type</Label>
                       <Select
                         value={newTransaction.type}
-                        onValueChange={(value) => setNewTransaction({ ...newTransaction, type: value })}
+                        onValueChange={(value: TransactionType) =>
+                          setNewTransaction({ ...newTransaction, type: value })
+                        }
                       >
                         <SelectTrigger id="type">
                           <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="expense">Expense</SelectItem>
-                          <SelectItem value="income">Income</SelectItem>
+                          <SelectItem value="Expense">Expense</SelectItem>
+                          <SelectItem value="Income">Income</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
@@ -331,6 +397,12 @@ export default function TransactionsPage() {
             <CardTitle className="text-lg">All Transactions ({filteredTransactions.length})</CardTitle>
           </CardHeader>
           <CardContent>
+            {loading && (
+              <div className="py-8 text-center text-muted-foreground">Carregando transações...</div>
+            )}
+            {error && (
+              <div className="py-4 mb-3 text-center text-destructive">{error}</div>
+            )}
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>

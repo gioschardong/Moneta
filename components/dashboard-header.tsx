@@ -12,6 +12,7 @@ const navigation = [
   { name: "Transactions", href: "/transactions" },
   { name: "Goals", href: "/goals" },
   { name: "Alerts", href: "/alerts" },
+  { name: "Categories", href: "/categories" },
 ]
 
 export function DashboardHeader() {
@@ -20,7 +21,7 @@ export function DashboardHeader() {
 
   return (
     <header className="sticky top-0 z-50 w-full border-b border-border/40 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container flex h-16 items-center justify-between px-4">
+      <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <Link href="/dashboard" className="flex items-center gap-2">
             <div className="w-10 h-10 bg-gradient-to-br from-primary to-secondary rounded-xl flex items-center justify-center shadow-lg">
@@ -85,8 +86,8 @@ export function DashboardHeader() {
             </SheetContent>
           </Sheet>
 
-          <Link href="/profile">
-            <Avatar className="h-10 w-10 border-2 border-primary/20 cursor-pointer hover:border-primary/40 transition-colors">
+          <Link href="/profile" className="fixed top-3 right-4 z-50">
+            <Avatar className="h-10 w-10 border-2 border-primary/20 cursor-pointer hover:border-primary/40 transition-colors shadow-lg">
               <AvatarFallback className="bg-primary text-primary-foreground font-semibold">JD</AvatarFallback>
             </Avatar>
           </Link>
