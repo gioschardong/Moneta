@@ -14,7 +14,7 @@ import { useRouter } from "next/navigation"
 export default function ProfilePage() {
   const router = useRouter()
   const [name, setName] = useState("John Doe")
-  const [email, setEmail] = useState("demo@financeflow.com")
+  const [email, setEmail] = useState("demo@moneta.com")
   const [phone, setPhone] = useState("+55 11 98765-4321")
   const [notifications, setNotifications] = useState(true)
   const [darkMode, setDarkMode] = useState(true)

@@ -19,7 +19,7 @@ export const defaultCategories: Category[] = [
 export function getCategories(): Category[] {
   if (typeof window === "undefined") return defaultCategories
 
-  const stored = localStorage.getItem("financeflow_categories")
+  const stored = localStorage.getItem("moneta_categories")
   if (stored) {
     return JSON.parse(stored)
   }

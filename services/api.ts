@@ -105,3 +105,26 @@ export async function register(email: string, password: string, fullName: string
   // Retorna os dados do usuário criado (não retorna token)
   return data;
 }
+
+export async function getCategories() {
+  const token = localStorage.getItem("moneta_token")
+  const res = await fetch(`${API_URL}/api/categories`, {
+    headers: { Authorization: `Bearer ${token}` }
+  })
+  if (!res.ok) throw new Error("Erro ao carregar categorias")
+  return res.json()
+}
+
+export async function createCategory(category: { name: string; emoji: string; color: string }) {
+  const token = localStorage.getItem("moneta_token")
+  const res = await fetch(`${API_URL}/api/categories`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`
+    },
+    body: JSON.stringify(category)
+  })
+  if (!res.ok) throw new Error("Erro ao criar categoria")
+  return res.json()
+}

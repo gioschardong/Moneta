@@ -11,7 +11,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Checkbox } from "@/components/ui/checkbox"
 import { getCategoryNames } from "@/lib/categories"
 import {
-  demoTransactions,
   demoGoals,
   calculateMonthlyStats,
   getCategoryDistribution,
@@ -33,9 +32,18 @@ import {
 
 const COLORS = ["#6C63FF", "#00E676", "#4FC3F7", "#FFD54F", "#FF6B6B"]
 
+interface Transaction {
+  id: string
+  date: string
+  category: { name: string }
+  description: string
+  amount: number
+  type: "income" | "expense"
+}
+
 export default function DashboardPage() {
   const [isTransactionOpen, setIsTransactionOpen] = useState(false)
-  const [categories, setCategories] = useState<string[]>([])
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
   const [newTransaction, setNewTransaction] = useState({
     description: "",
     amount: "",
@@ -48,11 +56,16 @@ export default function DashboardPage() {
   })
 
   useEffect(() => {
-    setCategories(getCategoryNames())
+    const categoryStrings: string[] = getCategoryNames()
+    const categoryObjects: { id: string; name: string }[] = categoryStrings.map((name, index) => ({
+      id: index.toString(),
+      name,
+    }))
+    setCategories(categoryObjects)
   }, [])
 
-  const stats = calculateMonthlyStats(demoTransactions)
-  const categoryData = getCategoryDistribution(demoTransactions)
+  const stats = calculateMonthlyStats([])
+  const categoryData = getCategoryDistribution([])
   const balanceData = getMonthlyBalanceData()
   const goalProgress = (demoGoals[0].current / demoGoals[0].target) * 100
 
@@ -88,6 +101,25 @@ export default function DashboardPage() {
       installments: 1,
     })
   }
+
+  const transactions: Transaction[] = [
+    {
+      id: "1",
+      date: "2025-10-25",
+      category: { name: "Groceries" },
+      description: "Supermarket purchase",
+      amount: 120.5,
+      type: "expense",
+    },
+    {
+      id: "2",
+      date: "2025-10-26",
+      category: { name: "Salary" },
+      description: "Monthly salary",
+      amount: 3500,
+      type: "income",
+    },
+  ]
 
   return (
     <div className="min-h-screen bg-background">
@@ -242,17 +274,19 @@ export default function DashboardPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {demoTransactions.slice(0, 5).map((transaction) => (
+                  {transactions.map((transaction) => (
                     <tr key={transaction.id} className="border-b border-border/50 hover:bg-accent/50 transition-colors">
                       <td className="py-3 px-4 text-sm">{new Date(transaction.date).toLocaleDateString()}</td>
                       <td className="py-3 px-4 text-sm">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                          {transaction.category}
+                          {transaction.category.name}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-sm">{transaction.description}</td>
                       <td
-                        className={`py-3 px-4 text-sm text-right font-semibold ${transaction.type === "income" ? "text-secondary" : "text-foreground"}`}
+                        className={`py-3 px-4 text-sm text-right font-semibold ${
+                          transaction.type === "income" ? "text-secondary" : "text-foreground"
+                        }`}
                       >
                         {transaction.type === "income" ? "+" : ""}${Math.abs(transaction.amount).toLocaleString()}
                       </td>
@@ -330,8 +364,8 @@ export default function DashboardPage() {
                   </SelectTrigger>
                   <SelectContent>
                     {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>

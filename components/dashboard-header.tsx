@@ -34,7 +34,7 @@ export function DashboardHeader() {
                 />
               </svg>
             </div>
-            <span className="font-bold text-xl hidden sm:inline-block">FinanceFlow</span>
+            <span className="font-bold text-xl hidden sm:inline-block">Moneta</span>
           </Link>
 
           <nav className="hidden md:flex items-center gap-1">

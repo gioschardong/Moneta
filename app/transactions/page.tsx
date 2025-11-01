@@ -18,7 +18,6 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog"
 
-import { getCategoryNames } from "@/lib/categories"
 
 export default function TransactionsPage() {
   const [transactions, setTransactions] = useState<any[]>([])
@@ -26,7 +25,7 @@ export default function TransactionsPage() {
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
-  const [categories, setCategories] = useState<string[]>([])
+  const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   type TransactionType = "Income" | "Expense";
@@ -100,7 +99,39 @@ export default function TransactionsPage() {
   }, [])
 
   useEffect(() => {
-    setCategories(getCategoryNames())
+    async function fetchCategories() {
+      const token = localStorage.getItem("moneta_token")
+      if (!token) {
+        setError("Usuário não autenticado")
+        console.error("Usuário não autenticado")
+        return
+      }
+
+      const authHeader = `Bearer ${token.replace(/^Bearer\\s+/i, "")}`
+
+      try {
+        const response = await fetch("http://localhost:5075/api/categories", {
+          headers: {
+            Authorization: authHeader,
+            "Content-Type": "application/json"
+          },
+        })
+
+        if (!response.ok) {
+          const text = await response.text()
+          console.error("Erro ao carregar categorias:", text)
+          throw new Error(`Erro ao buscar categorias: ${response.status}`)
+        }
+
+        const data = await response.json()
+        setCategories(data)
+      } catch (error) {
+        console.error("Erro ao buscar categorias:", error)
+        setError("Erro ao buscar categorias")
+      }
+    }
+
+    fetchCategories()
   }, [])
 
   const filteredTransactions = transactions.filter((transaction) => {
@@ -127,13 +158,13 @@ export default function TransactionsPage() {
 
   const handleCreateTransaction = async () => {
     try {
-        const payload = {
+      const payload = {
         description: newTransaction.description,
         amount: Number.parseFloat(newTransaction.amount),
         date: newTransaction.date,
-        type: newTransaction.type, // ✅ tipo seguro
-        categoryId: null,
-        };
+        type: newTransaction.type,
+        categoryId: newTransaction.category || null,
+      };
       console.log("Enviando nova transação:", payload);
       await createTransaction(payload);
 
@@ -244,8 +275,8 @@ export default function TransactionsPage() {
                       </SelectTrigger>
                       <SelectContent>
                         {categories.map((category) => (
-                          <SelectItem key={category} value={category}>
-                            {category}
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -353,8 +384,8 @@ export default function TransactionsPage() {
                   <SelectContent>
                     <SelectItem value="all">All categories</SelectItem>
                     {categories.map((category) => (
-                      <SelectItem key={category} value={category}>
-                        {category}
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
                       </SelectItem>
                     ))}
                   </SelectContent>
@@ -421,7 +452,7 @@ export default function TransactionsPage() {
                       <td className="py-3 px-4 text-sm">{new Date(transaction.date).toLocaleDateString()}</td>
                       <td className="py-3 px-4 text-sm">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                          {transaction.category}
+                          {transaction.category?.name}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-sm">{transaction.description}</td>

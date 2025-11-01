@@ -12,71 +12,120 @@ import { Plus, Pencil, Trash2 } from "lucide-react"
 interface Category {
   id: string
   name: string
-  icon: string
+  emoji: string
   color: string
 }
 
-const defaultCategories: Category[] = [
-  { id: "1", name: "Food", icon: "🍔", color: "#FF6B6B" },
-  { id: "2", name: "Transport", icon: "🚗", color: "#4ECDC4" },
-  { id: "3", name: "Entertainment", icon: "🎮", color: "#95E1D3" },
-  { id: "4", name: "Shopping", icon: "🛍️", color: "#F38181" },
-  { id: "5", name: "Bills", icon: "📄", color: "#AA96DA" },
-  { id: "6", name: "Health", icon: "🏥", color: "#FCBAD3" },
-  { id: "7", name: "Salary", icon: "💰", color: "#00E676" },
-  { id: "8", name: "Investment", icon: "📈", color: "#6C63FF" },
-]
+// const defaultCategories: Category[] = [
+//   { id: "1", name: "Food", emoji: "🍔", color: "#FF6B6B" },
+//   { id: "2", name: "Transport", emoji: "🚗", color: "#4ECDC4" },
+//   { id: "3", name: "Entertainment", emoji: "🎮", color: "#95E1D3" },
+//   { id: "4", name: "Shopping", emoji: "🛍️", color: "#F38181" },
+//   { id: "5", name: "Bills", emoji: "📄", color: "#AA96DA" },
+//   { id: "6", name: "Health", emoji: "🏥", color: "#FCBAD3" },
+//   { id: "7", name: "Salary", emoji: "💰", color: "#00E676" },
+//   { id: "8", name: "Investment", emoji: "📈", color: "#6C63FF" },
+// ]
 
 export default function CategoriesPage() {
   const [categories, setCategories] = useState<Category[]>([])
   const [isAddOpen, setIsAddOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
-  const [newCategory, setNewCategory] = useState({ name: "", icon: "", color: "#6C63FF" })
+  const [newCategory, setNewCategory] = useState({ name: "", emoji: "", color: "#6C63FF" })
 
   useEffect(() => {
-    const stored = localStorage.getItem("financeflow_categories")
-    if (stored) {
-      setCategories(JSON.parse(stored))
-    } else {
-      setCategories(defaultCategories)
-      localStorage.setItem("financeflow_categories", JSON.stringify(defaultCategories))
+    const fetchCategories = async () => {
+      try {
+        const token = localStorage.getItem("moneta_token") // ou onde você guarda o JWT
+        const res = await fetch("http://localhost:5075/api/categories", {
+          headers: {
+            "Authorization": `Bearer ${token}`,
+            "Content-Type": "application/json"
+          }
+        })
+
+        if (!res.ok) throw new Error("Erro ao buscar categorias")
+
+        const data: Category[] = await res.json()
+        setCategories(data)
+      } catch (err) {
+        console.error(err)
+      }
     }
+
+    fetchCategories()
   }, [])
 
-  const saveCategories = (updatedCategories: Category[]) => {
-    setCategories(updatedCategories)
-    localStorage.setItem("financeflow_categories", JSON.stringify(updatedCategories))
-  }
+  // Removed saveCategories: now categories are managed only via backend
 
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     if (!newCategory.name.trim()) return
 
-    const category: Category = {
-      id: Date.now().toString(),
-      name: newCategory.name,
-      icon: newCategory.icon || "📁",
-      color: newCategory.color,
-    }
+    try {
+      const token = localStorage.getItem("moneta_token")
+      const res = await fetch("http://localhost:5075/api/categories", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(newCategory)
+      })
 
-    saveCategories([...categories, category])
-    setNewCategory({ name: "", icon: "", color: "#6C63FF" })
-    setIsAddOpen(false)
+      if (!res.ok) throw new Error("Erro ao adicionar categoria")
+
+      const created = await res.json()
+      setCategories([...categories, created])
+      setNewCategory({ name: "", emoji: "", color: "#6C63FF" })
+      setIsAddOpen(false)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
-  const handleEditCategory = () => {
+  const handleEditCategory = async () => {
     if (!editingCategory || !editingCategory.name.trim()) return
 
-    const updatedCategories = categories.map((cat) => (cat.id === editingCategory.id ? editingCategory : cat))
+    try {
+      const token = localStorage.getItem("moneta_token")
+      const res = await fetch(`http://localhost:5075/api/categories/${editingCategory.id}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(editingCategory)
+      })
 
-    saveCategories(updatedCategories)
-    setEditingCategory(null)
-    setIsEditOpen(false)
+      if (!res.ok) throw new Error("Erro ao editar categoria")
+
+      const updated = await res.json()
+      const updatedList = categories.map((cat) => (cat.id === updated.id ? updated : cat))
+      setCategories(updatedList)
+      setIsEditOpen(false)
+    } catch (err) {
+      console.error(err)
+    }
   }
 
-  const handleDeleteCategory = (id: string) => {
-    if (confirm("Are you sure you want to delete this category?")) {
-      saveCategories(categories.filter((cat) => cat.id !== id))
+  const handleDeleteCategory = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this category?")) return
+
+    try {
+      const token = localStorage.getItem("moneta_token")
+      const res = await fetch(`http://localhost:5075/api/categories/${id}`, {
+        method: "DELETE",
+        headers: {
+          "Authorization": `Bearer ${token}`
+        }
+      })
+
+      if (!res.ok) throw new Error("Erro ao excluir categoria")
+
+      setCategories(categories.filter((cat) => cat.id !== id))
+    } catch (err) {
+      console.error(err)
     }
   }
 
@@ -118,12 +167,12 @@ export default function CategoriesPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="icon">Icon (Emoji)</Label>
+                  <Label htmlFor="emoji">Emoji</Label>
                   <Input
-                    id="icon"
+                    id="emoji"
                     placeholder="e.g., 🛒"
-                    value={newCategory.icon}
-                    onChange={(e) => setNewCategory({ ...newCategory, icon: e.target.value })}
+                    value={newCategory.emoji}
+                    onChange={(e) => setNewCategory({ ...newCategory, emoji: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">
@@ -165,12 +214,15 @@ export default function CategoriesPage() {
                       className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
                       style={{ backgroundColor: `${category.color}20` }}
                     >
-                      {category.icon}
+                      {/* Render emoji as string, fallback to default if empty */}
+                      {typeof category.emoji === "string" && category.emoji
+                        ? category.emoji
+                        : "🏷️"}
                     </div>
                     <div>
                       <CardTitle className="text-lg">{category.name}</CardTitle>
                       <CardDescription className="text-xs" style={{ color: category.color }}>
-                        {category.color}
+                        {category.name}
                       </CardDescription>
                     </div>
                   </div>
@@ -221,11 +273,11 @@ export default function CategoriesPage() {
                   />
                 </div>
                 <div className="space-y-2">
-                  <Label htmlFor="edit-icon">Icon (Emoji)</Label>
+                  <Label htmlFor="edit-emoji">Emoji</Label>
                   <Input
-                    id="edit-icon"
-                    value={editingCategory.icon}
-                    onChange={(e) => setEditingCategory({ ...editingCategory, icon: e.target.value })}
+                    id="edit-emoji"
+                    value={editingCategory.emoji}
+                    onChange={(e) => setEditingCategory({ ...editingCategory, emoji: e.target.value })}
                   />
                 </div>
                 <div className="space-y-2">

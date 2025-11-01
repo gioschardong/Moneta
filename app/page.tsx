@@ -43,11 +43,11 @@ export default function LoginPage() {
 
     if (!isLogin) {
       if (password !== confirmPassword) {
-        setError("Passwords do not match");
+        setError("As senhas não coincidem.");
         return;
       }
       if (name.trim().length < 2) {
-        setError("Please enter a valid name");
+        setError("Insisra um nome válido.");
         return;
       }
 
@@ -61,7 +61,7 @@ export default function LoginPage() {
         router.push("/dashboard");
       } catch (error) {
         console.error("Registration error:", error);
-        setError(error instanceof Error ? error.message : "Registration failed");
+        setError(error instanceof Error ? error.message : "Falha ao registrar. Tente novamente.");
       }
       return;
     }
@@ -73,7 +73,7 @@ export default function LoginPage() {
       router.push("/dashboard");
     } catch (error) {
       console.error("Login error:", error);
-      setError("Invalid email or password. Please try again.");
+      setError("Email ou senha inválidos. Tente novamente.");
     }
   };
 
@@ -112,11 +112,11 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="name">Full Name</Label>
+                <Label htmlFor="name">Nome completo</Label>
                 <Input
                   id="name"
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="Insira seu nome"
                   value={name}
                   onChange={(e) => setName(e.target.value)}
                   required
@@ -130,7 +130,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="voce@exemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -140,7 +140,7 @@ export default function LoginPage() {
 
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="confirmPassword">Confirme a Senha</Label>
                 <Input
                   id="confirmPassword"
                   type="password"
@@ -154,7 +154,7 @@ export default function LoginPage() {
             )}
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">Senha</Label>
               <Input
                 id="password"
                 type="password"
