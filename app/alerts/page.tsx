@@ -47,9 +47,9 @@ export default function AlertsPage() {
       <main className="container mx-auto px-4 py-8">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-bold text-balance">Alerts</h1>
+            <h1 className="text-3xl font-bold text-balance">Alertas</h1>
             <p className="text-muted-foreground mt-1">
-              Manage your financial alerts and notifications ({activeCount} active)
+              Gerencie seus alertas e notificações financeiras ({activeCount} ativos)
             </p>
           </div>
           <Dialog open={isAlertOpen} onOpenChange={setIsAlertOpen}>
@@ -58,51 +58,51 @@ export default function AlertsPage() {
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
                 </svg>
-                New Alert
+                Novo Alerta
               </Button>
             </DialogTrigger>
             <DialogContent className="sm:max-w-[500px]">
               <DialogHeader>
-                <DialogTitle>Create New Alert</DialogTitle>
+                <DialogTitle>Criar Novo Alerta</DialogTitle>
               </DialogHeader>
               <div className="grid gap-4 py-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="alert-type">Alert Type</Label>
+                  <Label htmlFor="alert-type">Tipo de Alerta</Label>
                   <Select value={newAlert.type} onValueChange={(value) => setNewAlert({ ...newAlert, type: value })}>
                     <SelectTrigger id="alert-type">
-                      <SelectValue placeholder="Select alert type" />
+                      <SelectValue placeholder="Selecionar tipo de alerta" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Budget Limit">Budget Limit</SelectItem>
-                      <SelectItem value="Low Balance">Low Balance</SelectItem>
-                      <SelectItem value="Goal Deadline">Goal Deadline</SelectItem>
-                      <SelectItem value="Large Transaction">Large Transaction</SelectItem>
-                      <SelectItem value="Bill Reminder">Bill Reminder</SelectItem>
+                      <SelectItem value="Budget Limit">Limite de Orçamento</SelectItem>
+                      <SelectItem value="Low Balance">Baixo Saldo</SelectItem>
+                      <SelectItem value="Goal Deadline">Prazo de Meta</SelectItem>
+                      <SelectItem value="Large Transaction">Grande Transação</SelectItem>
+                      <SelectItem value="Bill Reminder">Lembrete de Conta</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="condition">Condition</Label>
+                  <Label htmlFor="condition">Condição</Label>
                   <Input
                     id="condition"
-                    placeholder="e.g., When balance falls below $500"
+                    placeholder="e.g., Quando o saldo cair abaixo de R$500"
                     value={newAlert.condition}
                     onChange={(e) => setNewAlert({ ...newAlert, condition: e.target.value })}
                   />
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="threshold">Threshold Amount (optional)</Label>
+                  <Label htmlFor="threshold">Valor do Limite (opcional)</Label>
                   <Input id="threshold" type="number" placeholder="0.00" />
                 </div>
               </div>
 
               <div className="flex gap-3 justify-end">
                 <Button variant="outline" onClick={() => setIsAlertOpen(false)}>
-                  Cancel
+                  Cancelar
                 </Button>
-                <Button onClick={handleCreateAlert}>Create Alert</Button>
+                <Button onClick={handleCreateAlert}>Criar Alerta</Button>
               </div>
             </DialogContent>
           </Dialog>
@@ -184,7 +184,7 @@ export default function AlertsPage() {
         {/* Alert Types Info */}
         <Card className="border-border/50 shadow-lg mt-8">
           <CardContent className="p-6">
-            <h3 className="text-lg font-bold mb-4">Alert Types</h3>
+            <h3 className="text-lg font-bold mb-4">Tipos de Alerta</h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               <div className="p-4 rounded-lg bg-accent/50">
                 <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center mb-3">
@@ -197,8 +197,8 @@ export default function AlertsPage() {
                     />
                   </svg>
                 </div>
-                <h4 className="font-semibold mb-1">Budget Limit</h4>
-                <p className="text-xs text-muted-foreground">Get notified when spending exceeds budget</p>
+                <h4 className="font-semibold mb-1">Limite de Orçamento</h4>
+                <p className="text-xs text-muted-foreground">Receber notificações quando os gastos excederem o orçamento</p>
               </div>
 
               <div className="p-4 rounded-lg bg-accent/50">
@@ -212,8 +212,8 @@ export default function AlertsPage() {
                     />
                   </svg>
                 </div>
-                <h4 className="font-semibold mb-1">Low Balance</h4>
-                <p className="text-xs text-muted-foreground">Alert when account balance is low</p>
+                <h4 className="font-semibold mb-1">Baixo Saldo</h4>
+                <p className="text-xs text-muted-foreground">Alerta quando o saldo da conta estiver baixo</p>
               </div>
 
               <div className="p-4 rounded-lg bg-accent/50">
@@ -227,8 +227,8 @@ export default function AlertsPage() {
                     />
                   </svg>
                 </div>
-                <h4 className="font-semibold mb-1">Goal Deadline</h4>
-                <p className="text-xs text-muted-foreground">Reminders for approaching goal deadlines</p>
+                <h4 className="font-semibold mb-1">Meta de Prazo</h4>
+                <p className="text-xs text-muted-foreground">Lembretes para prazos de metas que se aproximam</p>
               </div>
 
               <div className="p-4 rounded-lg bg-accent/50">
@@ -242,8 +242,8 @@ export default function AlertsPage() {
                     />
                   </svg>
                 </div>
-                <h4 className="font-semibold mb-1">Large Transaction</h4>
-                <p className="text-xs text-muted-foreground">Notify on unusually large transactions</p>
+                <h4 className="font-semibold mb-1">Grande Transação</h4>
+                <p className="text-xs text-muted-foreground">Notificar sobre transações incomumente grandes</p>
               </div>
 
               <div className="p-4 rounded-lg bg-accent/50">
@@ -257,8 +257,8 @@ export default function AlertsPage() {
                     />
                   </svg>
                 </div>
-                <h4 className="font-semibold mb-1">Bill Reminder</h4>
-                <p className="text-xs text-muted-foreground">Alert when bills are due</p>
+                <h4 className="font-semibold mb-1">Lembrete de Conta</h4>
+                <p className="text-xs text-muted-foreground">Alerta quando as contas estão vencidas</p>
               </div>
             </div>
           </CardContent>

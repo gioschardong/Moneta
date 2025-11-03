@@ -95,7 +95,7 @@ export default function AccountsPage() {
       <div className="min-h-screen bg-background">
         <DashboardHeader />
         <main className="container mx-auto px-4 py-8">
-          <p className="text-muted-foreground">Loading accounts...</p>
+          <p className="text-muted-foreground">Carregando Contas...</p>
         </main>
       </div>
     )
@@ -111,31 +111,31 @@ export default function AccountsPage() {
           {/* Header */}
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-3xl font-bold">My Accounts</h1>
-              <p className="text-muted-foreground mt-2">Manage your financial accounts and monitor balances</p>
+              <h1 className="text-3xl font-bold">Minhas Contas</h1>
+              <p className="text-muted-foreground mt-2">Gerencie suas contas financeiras e monitore saldos</p>
             </div>
             <Dialog open={open} onOpenChange={setOpen}>
               <Button onClick={() => setOpen(true)} className="bg-primary hover:bg-primary/90">
                   <Plus className="w-4 h-4 mr-2" />
-                  New Account
+                  Nova Conta
                 </Button>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>Create New Account</DialogTitle>
+                <DialogTitle>Criar Nova Conta</DialogTitle>
               </DialogHeader>
               <div className="space-y-4">
                 <div>
-                  <Label htmlFor="name">Account Name</Label>
+                  <Label htmlFor="name">Nome da Conta</Label>
                   <Input
                     id="name"
-                    placeholder="e.g., Savings Account"
+                    placeholder="e.g., Conta Poupança"
                     value={newAccount.name}
                     onChange={(e) => setNewAccount({ ...newAccount, name: e.target.value })}
                     className="mt-2"
                   />
                 </div>
                 <div>
-                  <Label htmlFor="balance">Balance</Label>
+                  <Label htmlFor="balance">Saldo</Label>
                   <Input
                     id="balance"
                     type="number"
@@ -150,10 +150,10 @@ export default function AccountsPage() {
               </div>
               <DialogFooter>
                 <Button variant="outline" onClick={handleCloseDialog}>
-                  Cancel
+                  Cancelar
                 </Button>
                 <Button onClick={handleAddAccount} className="bg-primary hover:bg-primary/90">
-                  Create Account
+                  Criar Conta
                 </Button>
               </DialogFooter>
             </DialogContent>
@@ -163,8 +163,8 @@ export default function AccountsPage() {
           {/* Summary Card */}
           <Card className="border-border/50 shadow-lg">
             <CardHeader>
-              <CardTitle>Total Balance</CardTitle>
-              <CardDescription>Combined balance across all accounts</CardDescription>
+              <CardTitle>Saldo Total</CardTitle>
+              <CardDescription>Saldo combinado entre todas as contas</CardDescription>
             </CardHeader>
             <CardContent>
               <p className="text-4xl font-bold text-primary">
@@ -194,7 +194,7 @@ export default function AccountsPage() {
 
                   <CardContent className="space-y-4">
                     <div>
-                      <p className="text-sm text-muted-foreground">Balance</p>
+                      <p className="text-sm text-muted-foreground">Saldo</p>
                       <p
                         className={cn(
                           "text-2xl font-bold",
@@ -216,7 +216,7 @@ export default function AccountsPage() {
                         disabled
                       >
                         <Edit2 className="w-4 h-4 mr-1" />
-                        Edit
+                        Editar
                       </Button>
                       <Button
                         size="sm"
@@ -225,7 +225,7 @@ export default function AccountsPage() {
                         onClick={() => handleDelete(account.id)}
                       >
                         <Trash2 className="w-4 h-4 mr-1" />
-                        Delete
+                        Deletar
                       </Button>
                     </div>
                   </CardContent>
@@ -236,8 +236,8 @@ export default function AccountsPage() {
             <Card className="p-12">
               <CardContent className="text-center">
                 <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <p className="text-lg font-medium">No accounts yet</p>
-                <p className="text-muted-foreground text-sm mt-2">Create your first account to get started</p>
+                <p className="text-lg font-medium">Ainda sem contas</p>
+                <p className="text-muted-foreground text-sm mt-2">Crie sua primeira conta para começar</p>
               </CardContent>
             </Card>
           )}
