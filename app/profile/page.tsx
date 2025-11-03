@@ -10,14 +10,15 @@ import { Separator } from "@/components/ui/separator"
 import { Switch } from "@/components/ui/switch"
 import { useState } from "react"
 import { useRouter } from "next/navigation"
+import { useTheme } from "@/lib/theme-provider"
 
 export default function ProfilePage() {
   const router = useRouter()
+  const { theme, toggleTheme } = useTheme()
   const [name, setName] = useState("John Doe")
   const [email, setEmail] = useState("demo@moneta.com")
   const [phone, setPhone] = useState("+55 11 98765-4321")
   const [notifications, setNotifications] = useState(true)
-  const [darkMode, setDarkMode] = useState(true)
 
   const handleSave = () => {
     // Demo mode - just show success
@@ -124,10 +125,12 @@ export default function ProfilePage() {
               <Separator />
               <div className="flex items-center justify-between">
                 <div className="space-y-0.5">
-                  <Label htmlFor="dark-mode">Dark Mode</Label>
-                  <p className="text-sm text-muted-foreground">Use dark theme across the app</p>
+                  <Label htmlFor="theme-toggle">Theme</Label>
+                  <p className="text-sm text-muted-foreground">
+                    Current theme: <span className="capitalize font-medium">{theme}</span>
+                  </p>
                 </div>
-                <Switch id="dark-mode" checked={darkMode} onCheckedChange={setDarkMode} />
+                  <Switch id="theme-toggle" checked={theme === "dark"} onCheckedChange={toggleTheme} />
               </div>
             </CardContent>
           </Card>
