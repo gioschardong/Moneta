@@ -7,7 +7,12 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { createTransaction } from "@/services/api"
+import {
+  createTransaction,
+  getTransactions,
+  getCategories,
+  getAccounts,
+} from "@/services/api"
 
 import {
   Dialog,
@@ -19,75 +24,79 @@ import {
 } from "@/components/ui/dialog"
 
 
+
+type TransactionApi = {
+  id: string;
+  description: string;
+  amount: number;
+  date: string;
+  type: "Income" | "Expense";
+  categoryId?: string | null;
+  categoryName?: string | null;
+  accountId: string;
+  accountName?: string | null;
+};
+
+type AccountApi = {
+  id: string;
+  name: string;
+  balance: number;
+};
+
 export default function TransactionsPage() {
-  const [transactions, setTransactions] = useState<any[]>([])
+  const [transactions, setTransactions] = useState<TransactionApi[]>([])
   const [searchTerm, setSearchTerm] = useState("")
   const [categoryFilter, setCategoryFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
+  const [accounts, setAccounts] = useState<AccountApi[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  type TransactionType = "Income" | "Expense";
   const [newTransaction, setNewTransaction] = useState<{
-  description: string;
-  amount: string;
-  category: string;
-  type: TransactionType;
-  account: string;
-  date: string;
-  isInstallment: boolean;
-  installments: number;
-}>({
-  description: "",
-  amount: "",
-  category: "",
-  type: "Expense", // valor inicial compatível
-  account: "main",
-  date: new Date().toISOString().split("T")[0],
-  isInstallment: false,
-  installments: 1,
-});
+    description: string;
+    amount: string;
+    category: string;
+    type: "Income" | "Expense";
+    accountId: string;
+    date: string;
+    isInstallment: boolean;
+    installments: number;
+  }>({
+    description: "",
+    amount: "",
+    category: "",
+    type: "Expense",
+    accountId: "",
+    date: new Date().toISOString().split("T")[0],
+    isInstallment: false,
+    installments: 1,
+  });
 
   async function fetchTransactions() {
     setLoading(true)
     setError(null)
-
-    const token = localStorage.getItem("moneta_token")
-    if (!token) {
-      setError("Usuário não autenticado")
-      setLoading(false)
-      console.error("Usuário não autenticado")
-      return
-    }
-
-    // Certifique-se de não adicionar "Bearer" duas vezes
-    const authHeader = `Bearer ${token.replace(/^Bearer\s+/i, "")}`
-    console.log("Authorization header enviado:", authHeader)
-
     try {
-      const response = await fetch("http://localhost:5075/api/Transactions", {
-        headers: {
-          Authorization: authHeader,
-          "Content-Type": "application/json"
-        },
-      })
-
-      console.log("Status da resposta:", response.status)
-      console.log("StatusText:", response.statusText)
-
-      if (!response.ok) {
-        const text = await response.text()
-        console.error("Corpo da resposta:", text)
-        throw new Error(`Erro ao buscar transações: ${response.status} ${response.statusText}`)
+      const [txs, cats, accs] = await Promise.all([
+        getTransactions(),
+        getCategories(),
+        getAccounts(),
+      ])
+      // order by date desc
+      txs.sort((a: TransactionApi, b: TransactionApi) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      setTransactions(txs)
+      setCategories(cats)
+      setAccounts(accs)
+      // if there's no selected account in the form, preselect the first account
+      if (accs.length > 0) {
+        setNewTransaction((prev) => ({
+          ...prev,
+          accountId: prev.accountId || accs[0].id,
+        }))
       }
-
-      const data = await response.json()
-      console.log("Transações recebidas:", data)
-      setTransactions(data)
-    } catch (error) {
-      setError("Erro ao carregar transações")
-      console.error("Erro ao carregar transações:", error)
+    } catch (err) {
+      console.error(err)
+      setError("Erro ao carregar dados")
     } finally {
       setLoading(false)
     }
@@ -98,55 +107,28 @@ export default function TransactionsPage() {
     // eslint-disable-next-line
   }, [])
 
-  useEffect(() => {
-    async function fetchCategories() {
-      const token = localStorage.getItem("moneta_token")
-      if (!token) {
-        setError("Usuário não autenticado")
-        console.error("Usuário não autenticado")
-        return
-      }
 
-      const authHeader = `Bearer ${token.replace(/^Bearer\\s+/i, "")}`
-
-      try {
-        const response = await fetch("http://localhost:5075/api/categories", {
-          headers: {
-            Authorization: authHeader,
-            "Content-Type": "application/json"
-          },
-        })
-
-        if (!response.ok) {
-          const text = await response.text()
-          console.error("Erro ao carregar categorias:", text)
-          throw new Error(`Erro ao buscar categorias: ${response.status}`)
-        }
-
-        const data = await response.json()
-        setCategories(data)
-      } catch (error) {
-        console.error("Erro ao buscar categorias:", error)
-        setError("Erro ao buscar categorias")
-      }
-    }
-
-    fetchCategories()
-  }, [])
-
+  const [accountFilter, setAccountFilter] = useState("all")
   const filteredTransactions = transactions.filter((transaction) => {
     const matchesSearch =
       transaction.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      transaction.category?.toLowerCase().includes(searchTerm.toLowerCase())
-    const matchesCategory = categoryFilter === "all" || transaction.category === categoryFilter
+      transaction.categoryName?.toLowerCase().includes(searchTerm.toLowerCase())
+    const matchesCategory = categoryFilter === "all" || transaction.categoryId === categoryFilter
     const matchesType = typeFilter === "all" || transaction.type === typeFilter
-
-    return matchesSearch && matchesCategory && matchesType
+    const matchesAccount = accountFilter === "all" || transaction.accountId === accountFilter
+    return matchesSearch && matchesCategory && matchesType && matchesAccount
   })
 
   const handleExportCSV = () => {
     const headers = ["Date", "Category", "Description", "Amount", "Type", "Account"]
-    const csvData = filteredTransactions.map((t) => [t.date, t.category, t.description, t.amount, t.type, t.account])
+    const csvData = filteredTransactions.map((t) => [
+      t.date,
+      t.categoryName ?? "",
+      t.description,
+      t.amount,
+      t.type,
+      t.accountName ?? "",
+    ])
     const csv = [headers, ...csvData].map((row) => row.join(",")).join("\n")
     const blob = new Blob([csv], { type: "text/csv" })
     const url = window.URL.createObjectURL(blob)
@@ -164,6 +146,7 @@ export default function TransactionsPage() {
         date: newTransaction.date,
         type: newTransaction.type,
         categoryId: newTransaction.category || null,
+        accountId: newTransaction.accountId,
       };
       console.log("Enviando nova transação:", payload);
       await createTransaction(payload);
@@ -175,7 +158,7 @@ export default function TransactionsPage() {
         amount: "",
         category: "",
         type: "Expense",
-        account: "main",
+        accountId: accounts[0]?.id || "",
         date: new Date().toISOString().split("T")[0],
         isInstallment: false,
         installments: 1,
@@ -249,8 +232,8 @@ export default function TransactionsPage() {
                       <Label htmlFor="type">Type</Label>
                       <Select
                         value={newTransaction.type}
-                        onValueChange={(value: TransactionType) =>
-                          setNewTransaction({ ...newTransaction, type: value })
+                        onValueChange={(value) =>
+                          setNewTransaction({ ...newTransaction, type: value as "Income" | "Expense" })
                         }
                       >
                         <SelectTrigger id="type">
@@ -287,15 +270,18 @@ export default function TransactionsPage() {
                     <div className="grid gap-2">
                       <Label htmlFor="account">Account</Label>
                       <Select
-                        value={newTransaction.account}
-                        onValueChange={(value) => setNewTransaction({ ...newTransaction, account: value })}
+                        value={newTransaction.accountId}
+                        onValueChange={(value) => setNewTransaction({ ...newTransaction, accountId: value })}
                       >
                         <SelectTrigger id="account">
-                          <SelectValue />
+                          <SelectValue placeholder="Select account" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="main">Main Account</SelectItem>
-                          <SelectItem value="credit">Credit Card</SelectItem>
+                          {accounts.map((acc) => (
+                            <SelectItem key={acc.id} value={acc.id}>
+                              {acc.name}
+                            </SelectItem>
+                          ))}
                         </SelectContent>
                       </Select>
                     </div>
@@ -400,22 +386,25 @@ export default function TransactionsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All types</SelectItem>
-                    <SelectItem value="income">Income</SelectItem>
-                    <SelectItem value="expense">Expense</SelectItem>
+                    <SelectItem value="Income">Income</SelectItem>
+                    <SelectItem value="Expense">Expense</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
 
               <div className="space-y-2">
                 <Label htmlFor="account">Account</Label>
-                <Select defaultValue="all">
+                <Select value={accountFilter} onValueChange={setAccountFilter}>
                   <SelectTrigger id="account">
                     <SelectValue placeholder="All accounts" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">All accounts</SelectItem>
-                    <SelectItem value="main">Main Account</SelectItem>
-                    <SelectItem value="credit">Credit Card</SelectItem>
+                    {accounts.map((acc) => (
+                      <SelectItem key={acc.id} value={acc.id}>
+                        {acc.name}
+                      </SelectItem>
+                    ))}
                   </SelectContent>
                 </Select>
               </div>
@@ -452,15 +441,17 @@ export default function TransactionsPage() {
                       <td className="py-3 px-4 text-sm">{new Date(transaction.date).toLocaleDateString()}</td>
                       <td className="py-3 px-4 text-sm">
                         <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-primary/10 text-primary">
-                          {transaction.category?.name}
+                          {transaction.categoryName || "—"}
                         </span>
                       </td>
                       <td className="py-3 px-4 text-sm">{transaction.description}</td>
-                      <td className="py-3 px-4 text-sm text-muted-foreground">{transaction.account}</td>
+                      <td className="py-3 px-4 text-sm text-muted-foreground">
+                        {transaction.accountName || "—"}
+                      </td>
                       <td
-                        className={`py-3 px-4 text-sm text-right font-semibold ${transaction.type === "income" ? "text-secondary" : "text-foreground"}`}
+                        className={`py-3 px-4 text-sm text-right font-semibold ${transaction.type === "Income" ? "text-secondary" : "text-foreground"}`}
                       >
-                        {transaction.type === "income" ? "+" : ""}${Math.abs(transaction.amount).toLocaleString()}
+                        {transaction.type === "Income" ? "+" : ""}${Math.abs(transaction.amount).toLocaleString()}
                       </td>
                       <td className="py-3 px-4 text-sm text-right">
                         <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
