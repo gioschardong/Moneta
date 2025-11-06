@@ -138,6 +138,19 @@ export default function LoginPage() {
               />
             </div>
 
+            <div className="space-y-2">
+              <Label htmlFor="password">Senha</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="••••••••"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                className="h-12"
+              />
+            </div>
+
             {!isLogin && (
               <div className="space-y-2">
                 <Label htmlFor="confirmPassword">Confirme a Senha</Label>
@@ -152,19 +165,6 @@ export default function LoginPage() {
                 />
               </div>
             )}
-
-            <div className="space-y-2">
-              <Label htmlFor="password">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="h-12"
-              />
-            </div>
 
             <Button type="submit" className="w-full h-12 text-base font-semibold">
               {isLogin ? "Sign In" : "Create Account"}
